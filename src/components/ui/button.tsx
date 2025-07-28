@@ -18,6 +18,9 @@ const buttonVariants = cva(
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
+        music: "bg-gradient-primary text-white hover:opacity-90 shadow-music transition-all duration-300 hover:scale-105",
+        player: "bg-music-card text-foreground hover:bg-music-accent border border-music-accent/20 transition-all duration-300",
+        category: "bg-music-card/50 text-foreground hover:bg-music-accent/80 border border-music-accent/30 backdrop-blur-sm transition-all duration-300 hover:scale-105",
       },
       size: {
         default: "h-10 px-4 py-2",

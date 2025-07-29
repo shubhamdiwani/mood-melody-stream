@@ -1,11 +1,55 @@
-import { useState } from "react";
-import { Bell, Clock, Heart } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Bell, Clock, Heart, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import SongCard from "@/components/SongCard";
 import PlaylistCard from "@/components/PlaylistCard";
 
 const Home = () => {
   const [likedSongs, setLikedSongs] = useState<Set<string>>(new Set());
+  const { user, loading, signOut } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/');
+    }
+  }, [user, loading, navigate]);
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Signed out successfully",
+        description: "You've been signed out of your account.",
+      });
+      navigate('/');
+    } catch (error) {
+      toast({
+        title: "Error signing out",
+        description: "An error occurred while signing out.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-pulse text-center">
+          <Heart className="h-12 w-12 mx-auto mb-4 text-music-primary" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
 
   const toggleLike = (songId: string) => {
     setLikedSongs(prev => {
@@ -72,10 +116,18 @@ const Home = () => {
       {/* Header */}
       <div className="bg-gradient-primary p-6 pb-8">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-white">{getGreeting()}</h1>
-          <Button variant="ghost" size="icon" className="text-white hover:bg-white/20">
-            <Bell className="h-5 w-5" />
-          </Button>
+          <div>
+            <h1 className="text-2xl font-bold text-white">{getGreeting()}</h1>
+            <p className="text-white/80 text-sm">Welcome back, {user.email?.split('@')[0]}!</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" className="text-white hover:bg-white/20">
+              <Bell className="h-5 w-5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="text-white hover:bg-white/20" onClick={handleSignOut}>
+              <LogOut className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
         
         {/* Quick access buttons */}

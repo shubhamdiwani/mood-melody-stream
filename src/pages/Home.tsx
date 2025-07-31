@@ -1,14 +1,17 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, Clock, Heart, LogOut } from "lucide-react";
+import { Bell, Clock, Heart, LogOut, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import SongCard from "@/components/SongCard";
 import PlaylistCard from "@/components/PlaylistCard";
+import { jamendoApi, type JamendoTrack } from "@/services/jamendoApi";
 
 const Home = () => {
   const [likedSongs, setLikedSongs] = useState<Set<string>>(new Set());
+  const [jamendoTracks, setJamendoTracks] = useState<JamendoTrack[]>([]);
+  const [tracksLoading, setTracksLoading] = useState(true);
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -18,6 +21,29 @@ const Home = () => {
       navigate('/');
     }
   }, [user, loading, navigate]);
+
+  useEffect(() => {
+    const fetchTracks = async () => {
+      try {
+        setTracksLoading(true);
+        const tracks = await jamendoApi.getTracks(10);
+        setJamendoTracks(tracks);
+      } catch (error) {
+        console.error('Error fetching tracks:', error);
+        toast({
+          title: "Error loading tracks",
+          description: "Failed to load tracks from Jamendo.",
+          variant: "destructive",
+        });
+      } finally {
+        setTracksLoading(false);
+      }
+    };
+
+    if (user) {
+      fetchTracks();
+    }
+  }, [user, toast]);
 
   const handleSignOut = async () => {
     try {
@@ -159,6 +185,37 @@ const Home = () => {
               />
             ))}
           </div>
+        </section>
+
+        {/* Jamendo Tracks */}
+        <section>
+          <h2 className="text-xl font-bold text-foreground mb-4">Discover Music</h2>
+          {tracksLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-music-primary" />
+              <span className="ml-2 text-muted-foreground">Loading tracks...</span>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {jamendoTracks.map((track) => (
+                <SongCard
+                  key={track.id}
+                  title={track.name}
+                  artist={track.artist_name}
+                  image={track.image || "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=200&h=200&fit=crop"}
+                  duration={`${Math.floor(track.duration / 60)}:${(track.duration % 60).toString().padStart(2, '0')}`}
+                  isLiked={likedSongs.has(track.id)}
+                  onPlay={() => {
+                    if (track.audio) {
+                      const audio = new Audio(track.audio);
+                      audio.play().catch(err => console.error('Error playing audio:', err));
+                    }
+                  }}
+                  onLike={() => toggleLike(track.id)}
+                />
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Recently Played */}
